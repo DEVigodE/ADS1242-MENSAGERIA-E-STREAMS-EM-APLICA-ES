@@ -1,0 +1,42 @@
+services:
+
+  broker-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: broker-rabbitmq
+    hostname: broker-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - rede-logistica
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  consumidor:
+    build:
+      context: ./consumidor
+    container_name: consumidor
+    networks:
+      - rede-logistica
+    depends_on:
+      broker-rabbitmq:
+        condition: service_healthy
+
+  produtor:
+    build:
+      context: ./produtor
+    container_name: produtor
+    networks:
+      - rede-logistica
+    depends_on:
+      broker-rabbitmq:
+        condition: service_healthy
+      consumidor:
+        condition: service_started
+
+networks:
+  rede-logistica:
+    driver: bridge
